@@ -21,9 +21,9 @@ interface RegionTabsProps {
 
 export function RegionTabs({ activeRegion, onRegionChange, module }: RegionTabsProps) {
   return (
-    <div className="w-48 bg-gray-100 border-r border-gray-200 flex flex-col">
+    <div className="w-48 h-full bg-gray-100 border-r border-gray-200 flex flex-col">
       {/* Header */}
-      <div className="p-4 border-b border-gray-200">
+      <div className="p-4 border-b border-gray-200 flex-shrink-0">
         <div className="flex items-center space-x-2">
           <MapPin className="w-4 h-4 text-gray-600" />
           <span className="text-sm font-medium text-gray-800 capitalize">{module} Regions</span>
@@ -31,7 +31,7 @@ export function RegionTabs({ activeRegion, onRegionChange, module }: RegionTabsP
       </div>
 
       {/* Region Tabs */}
-      <div className="flex-1 py-2">
+      <div className="flex-1 py-2 overflow-y-auto">
         {REGIONS.map((region) => (
           <button
             key={region.key}
@@ -53,7 +53,7 @@ export function RegionTabs({ activeRegion, onRegionChange, module }: RegionTabsP
       </div>
 
       {/* Footer Info */}
-      <div className="p-3 border-t border-gray-200 text-xs text-gray-500">
+      <div className="p-3 border-t border-gray-200 text-xs text-gray-500 flex-shrink-0">
         <div>Active: {REGIONS.find((r) => r.key === activeRegion)?.shortLabel}</div>
       </div>
     </div>

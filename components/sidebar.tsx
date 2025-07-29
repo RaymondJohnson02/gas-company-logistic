@@ -16,7 +16,7 @@ export function Sidebar() {
   const [activeItem, setActiveItem] = useState("Terminal")
 
   return (
-    <div className="w-16 bg-slate-800 flex flex-col items-center py-4 space-y-2">
+    <div className="w-16 h-full bg-slate-800 flex flex-col items-center py-4 space-y-2">
       {menuItems.map((item) => {
         const Icon = item.icon
         const isActive = item.label === activeItem
