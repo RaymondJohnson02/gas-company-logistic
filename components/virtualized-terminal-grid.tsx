@@ -26,7 +26,7 @@ const PRODUCTS = [
   { key: "solar", label: "Solar", color: "bg-orange-100" },
 ]
 
-// Region mapping
+// Region mapping - Updated with 2 new regions
 const REGION_MAPPING = {
   all: "All Regions",
   "region-1": "Jakarta",
@@ -34,12 +34,14 @@ const REGION_MAPPING = {
   "region-3": "Medan",
   "region-4": "Makassar",
   "region-5": "Balikpapan",
+  "region-6": "Bandung",
+  "region-7": "Palembang",
 }
 
-// Simulate large dataset with proper product names and regions
+// Simulate large dataset with proper product names and regions - Updated with new regions
 const generateLargeDataset = (size: number) => {
   const productNames = ["Pertalite", "Pertamax", "Biosolar", "Dexlite", "Pertamax Turbo", "Solar"]
-  const regionNames = ["Jakarta", "Surabaya", "Medan", "Makassar", "Balikpapan"]
+  const regionNames = ["Jakarta", "Surabaya", "Medan", "Makassar", "Balikpapan", "Bandung", "Palembang"]
 
   return Array.from({ length: size }, (_, i) => {
     const date = new Date(2024, 0, 1)

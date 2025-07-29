@@ -9,6 +9,8 @@ const REGIONS = [
   { key: "region-3", label: "Region 3 - Medan", shortLabel: "Region 3" },
   { key: "region-4", label: "Region 4 - Makassar", shortLabel: "Region 4" },
   { key: "region-5", label: "Region 5 - Balikpapan", shortLabel: "Region 5" },
+  { key: "region-6", label: "Region 6 - Bandung", shortLabel: "Region 6" },
+  { key: "region-7", label: "Region 7 - Palembang", shortLabel: "Region 7" },
 ]
 
 interface RegionTabsProps {
