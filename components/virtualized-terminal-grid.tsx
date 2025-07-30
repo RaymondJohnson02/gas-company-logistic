@@ -89,6 +89,9 @@ const generateLargeDataset = (size: number) => {
     date.setDate(date.getDate() + (i % 365))
     const plant = TERMINAL_PLANT_DATA[i % TERMINAL_PLANT_DATA.length]
 
+    // Use deterministic values based on index to ensure server/client consistency
+    const seed = i + 1
+
     return {
       id: i + 1,
       date: format(date, "yyyy-MM-dd"),
@@ -96,15 +99,15 @@ const generateLargeDataset = (size: number) => {
       plantCode: plant.code,
       terminal: `Terminal ${String.fromCharCode(65 + (i % 26))}`,
       product: productNames[i % productNames.length],
-      openingStock: Math.floor(Math.random() * 10000),
-      receipts: Math.floor(Math.random() * 5000),
-      deliveries: Math.floor(Math.random() * 4000),
-      closingStock: Math.floor(Math.random() * 8000),
+      openingStock: Math.floor((seed * 7919) % 10000), // Deterministic pseudo-random
+      receipts: Math.floor((seed * 3571) % 5000),
+      deliveries: Math.floor((seed * 2411) % 4000),
+      closingStock: Math.floor((seed * 5237) % 8000),
       region: regionNames[i % regionNames.length],
       customer: `Customer ${i + 1}`,
-      volume: Math.floor(Math.random() * 1000 * 100) / 100,
-      unitPrice: Math.floor(Math.random() * 15000),
-      totalValue: Math.floor(Math.random() * 15000000),
+      volume: Math.floor((seed * 1327) % 100000) / 100,
+      unitPrice: Math.floor((seed * 4793) % 15000),
+      totalValue: Math.floor((seed * 6121) % 15000000),
       status: ["Active", "Pending", "Completed"][i % 3],
     }
   })
