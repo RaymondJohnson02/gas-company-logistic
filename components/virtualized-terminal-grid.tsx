@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { EditableCell } from "@/components/editable-cell"
+import { EditableDropdownCell } from "@/components/editable-dropdown-cell"
 import { CalendarIcon, Plus, Save, X } from "lucide-react"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
@@ -54,6 +55,30 @@ const TERMINAL_PLANT_DATA = [
   { name: "Jakarta Terminal", code: "JKT" },
 ]
 
+// Dropdown options
+const TERMINAL_CODE_OPTIONS = TERMINAL_PLANT_DATA.map((plant) => ({
+  value: plant.code,
+  label: `${plant.code} - ${plant.name}`,
+}))
+
+const PRODUCT_OPTIONS = PRODUCTS.filter((p) => p.key !== "all").map((product) => ({
+  value: product.label,
+  label: product.label,
+}))
+
+const REGION_OPTIONS = Object.entries(REGION_MAPPING)
+  .filter(([key]) => key !== "all")
+  .map(([key, value]) => ({
+    value: value,
+    label: value,
+  }))
+
+const STATUS_OPTIONS = [
+  { value: "Active", label: "Active" },
+  { value: "Pending", label: "Pending" },
+  { value: "Completed", label: "Completed" },
+]
+
 // Simulate large dataset with proper product names and regions - Updated with new regions
 const generateLargeDataset = (size: number) => {
   const productNames = ["Pertalite", "Pertamax", "Biosolar", "Dexlite", "Pertamax Turbo", "Solar"]
@@ -88,19 +113,19 @@ const generateLargeDataset = (size: number) => {
 const terminalColumns = [
   { key: "date", label: "Date", type: "text" as const, width: 120 },
   { key: "plantName", label: "Terminal Plant Name", type: "text" as const, width: 180 },
-  { key: "plantCode", label: "Terminal Code", type: "text" as const, width: 120 },
+  { key: "plantCode", label: "Terminal Code", type: "dropdown" as const, width: 120 },
   { key: "terminal", label: "Terminal", type: "text" as const, width: 120 },
-  { key: "product", label: "Product", type: "text" as const, width: 140 },
+  { key: "product", label: "Product", type: "dropdown" as const, width: 140 },
   { key: "openingStock", label: "Opening Stock", type: "number" as const, width: 140 },
   { key: "receipts", label: "Receipts", type: "number" as const, width: 120 },
   { key: "deliveries", label: "Deliveries", type: "number" as const, width: 120 },
   { key: "closingStock", label: "Closing Stock", type: "number" as const, width: 140 },
-  { key: "region", label: "Region", type: "text" as const, width: 120 },
+  { key: "region", label: "Region", type: "dropdown" as const, width: 120 },
   { key: "customer", label: "Customer", type: "text" as const, width: 120 },
   { key: "volume", label: "Volume (KL)", type: "number" as const, width: 120 },
   { key: "unitPrice", label: "Unit Price", type: "number" as const, width: 120 },
   { key: "totalValue", label: "Total Value", type: "number" as const, width: 140 },
-  { key: "status", label: "Status", type: "text" as const, width: 120 },
+  { key: "status", label: "Status", type: "dropdown" as const, width: 120 },
 ]
 
 // Create empty row template
@@ -122,6 +147,59 @@ const createEmptyRow = (id: number, product = "", region = "") => ({
   totalValue: 0,
   status: "Pending",
 })
+
+// Helper function to get dropdown options for a column
+const getDropdownOptions = (columnKey: string) => {
+  switch (columnKey) {
+    case "plantCode":
+      return TERMINAL_CODE_OPTIONS
+    case "product":
+      return PRODUCT_OPTIONS
+    case "region":
+      return REGION_OPTIONS
+    case "status":
+      return STATUS_OPTIONS
+    default:
+      return []
+  }
+}
+
+// Helper function to render badge values
+const renderBadgeValue = (columnKey: string, value: string) => {
+  switch (columnKey) {
+    case "plantCode":
+      return (
+        <Badge variant="outline" className="bg-blue-100 text-blue-800 font-mono text-xs">
+          {value}
+        </Badge>
+      )
+    case "product":
+      return (
+        <Badge
+          variant="outline"
+          className={cn(
+            "font-medium",
+            value === "Pertalite" && "bg-blue-100 text-blue-800",
+            value === "Pertamax" && "bg-green-100 text-green-800",
+            value === "Biosolar" && "bg-yellow-100 text-yellow-800",
+            value === "Dexlite" && "bg-purple-100 text-purple-800",
+            value === "Pertamax Turbo" && "bg-red-100 text-red-800",
+            value === "Solar" && "bg-orange-100 text-orange-800",
+          )}
+        >
+          {value}
+        </Badge>
+      )
+    case "region":
+      return <Badge variant="outline">{value}</Badge>
+    case "status":
+      return (
+        <Badge variant={value === "Active" ? "default" : value === "Pending" ? "secondary" : "outline"}>{value}</Badge>
+      )
+    default:
+      return value
+  }
+}
 
 // Row component for virtualization
 const VirtualRow = ({ index, style, data }: any) => {
@@ -156,49 +234,22 @@ const VirtualRow = ({ index, style, data }: any) => {
           className="border-r border-gray-200 last:border-r-0 flex items-center flex-shrink-0"
           style={{ width: column.width, minWidth: column.width }}
         >
-          {column.key === "region" && !isNewRow ? (
-            <div className="px-3 py-2 text-sm text-center w-full">
-              <Badge variant="outline">{row[column.key]}</Badge>
-            </div>
-          ) : column.key === "plantCode" ? (
-            <div className="px-3 py-2 text-sm text-center w-full">
-              <Badge variant="outline" className="bg-blue-100 text-blue-800 font-mono text-xs">
-                {row[column.key]}
-              </Badge>
-            </div>
-          ) : column.key === "status" && !isNewRow ? (
-            <div className="px-3 py-2 text-sm text-center w-full">
-              <Badge
-                variant={
-                  row[column.key] === "Active" ? "default" : row[column.key] === "Pending" ? "secondary" : "outline"
-                }
-              >
-                {row[column.key]}
-              </Badge>
-            </div>
-          ) : column.key === "status" && isNewRow ? (
-            <div className="px-3 py-2 text-sm text-center w-full">
-              <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 border-yellow-300">
-                {row[column.key]}
-              </Badge>
-            </div>
-          ) : column.key === "product" ? (
-            <div className="px-3 py-2 text-sm text-center w-full">
-              <Badge
-                variant="outline"
-                className={cn(
-                  "font-medium",
-                  row[column.key] === "Pertalite" && "bg-blue-100 text-blue-800",
-                  row[column.key] === "Pertamax" && "bg-green-100 text-green-800",
-                  row[column.key] === "Biosolar" && "bg-yellow-100 text-yellow-800",
-                  row[column.key] === "Dexlite" && "bg-purple-100 text-purple-800",
-                  row[column.key] === "Pertamax Turbo" && "bg-red-100 text-red-800",
-                  row[column.key] === "Solar" && "bg-orange-100 text-orange-800",
-                )}
-              >
-                {row[column.key]}
-              </Badge>
-            </div>
+          {column.type === "dropdown" ? (
+            <EditableDropdownCell
+              value={row[column.key]}
+              onSave={(value) => handleCellUpdate(row.id, column.key, value)}
+              options={getDropdownOptions(column.key)}
+              className="text-center w-full"
+              renderValue={(value) =>
+                isNewRow && column.key === "status" ? (
+                  <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 border-yellow-300">
+                    {value}
+                  </Badge>
+                ) : (
+                  renderBadgeValue(column.key, value)
+                )
+              }
+            />
           ) : (
             <EditableCell
               value={row[column.key]}
