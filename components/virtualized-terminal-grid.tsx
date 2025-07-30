@@ -38,6 +38,22 @@ const REGION_MAPPING = {
   "region-7": "Palembang",
 }
 
+// Terminal plant data - Only terminals, no refineries
+const TERMINAL_PLANT_DATA = [
+  { name: "Plumpang Terminal", code: "PLG" },
+  { name: "Tanjung Perak Terminal", code: "TPK" },
+  { name: "Belawan Terminal", code: "BLW" },
+  { name: "Soekarno Hatta Terminal", code: "SKH" },
+  { name: "Kasim Terminal", code: "KSM" },
+  { name: "Makassar Terminal", code: "MKS" },
+  { name: "Balikpapan Terminal", code: "BPT" },
+  { name: "Bandung Terminal", code: "BDG" },
+  { name: "Palembang Terminal", code: "PLB" },
+  { name: "Medan Terminal", code: "MDN" },
+  { name: "Surabaya Terminal", code: "SBY" },
+  { name: "Jakarta Terminal", code: "JKT" },
+]
+
 // Simulate large dataset with proper product names and regions - Updated with new regions
 const generateLargeDataset = (size: number) => {
   const productNames = ["Pertalite", "Pertamax", "Biosolar", "Dexlite", "Pertamax Turbo", "Solar"]
@@ -46,10 +62,13 @@ const generateLargeDataset = (size: number) => {
   return Array.from({ length: size }, (_, i) => {
     const date = new Date(2024, 0, 1)
     date.setDate(date.getDate() + (i % 365))
+    const plant = TERMINAL_PLANT_DATA[i % TERMINAL_PLANT_DATA.length]
 
     return {
       id: i + 1,
       date: format(date, "yyyy-MM-dd"),
+      plantName: plant.name,
+      plantCode: plant.code,
       terminal: `Terminal ${String.fromCharCode(65 + (i % 26))}`,
       product: productNames[i % productNames.length],
       openingStock: Math.floor(Math.random() * 10000),
@@ -68,6 +87,8 @@ const generateLargeDataset = (size: number) => {
 
 const terminalColumns = [
   { key: "date", label: "Date", type: "text" as const, width: 120 },
+  { key: "plantName", label: "Terminal Plant Name", type: "text" as const, width: 180 },
+  { key: "plantCode", label: "Terminal Code", type: "text" as const, width: 120 },
   { key: "terminal", label: "Terminal", type: "text" as const, width: 120 },
   { key: "product", label: "Product", type: "text" as const, width: 140 },
   { key: "openingStock", label: "Opening Stock", type: "number" as const, width: 140 },
@@ -86,6 +107,8 @@ const terminalColumns = [
 const createEmptyRow = (id: number, product = "", region = "") => ({
   id,
   date: format(new Date(), "yyyy-MM-dd"),
+  plantName: "",
+  plantCode: "",
   terminal: "",
   product: product,
   openingStock: 0,
@@ -97,7 +120,7 @@ const createEmptyRow = (id: number, product = "", region = "") => ({
   volume: 0,
   unitPrice: 0,
   totalValue: 0,
-  status: "Active",
+  status: "Pending",
 })
 
 // Row component for virtualization
@@ -110,12 +133,12 @@ const VirtualRow = ({ index, style, data }: any) => {
     <div
       style={style}
       className={`flex border-b border-gray-200 hover:bg-gray-50 ${
-        isNewRow ? "bg-green-50 border-green-200" : index % 2 === 0 ? "bg-white" : "bg-gray-50"
+        isNewRow ? "bg-yellow-50 border-yellow-200" : index % 2 === 0 ? "bg-white" : "bg-gray-50"
       }`}
     >
       {/* Delete button for new rows */}
       {isNewRow && (
-        <div className="w-10 flex items-center justify-center border-r border-gray-200">
+        <div className="w-10 flex items-center justify-center border-r border-gray-200 flex-shrink-0">
           <Button
             variant="ghost"
             size="sm"
@@ -130,12 +153,18 @@ const VirtualRow = ({ index, style, data }: any) => {
       {terminalColumns.map((column) => (
         <div
           key={`${row.id}-${column.key}`}
-          className="border-r border-gray-200 last:border-r-0 flex items-center"
+          className="border-r border-gray-200 last:border-r-0 flex items-center flex-shrink-0"
           style={{ width: column.width, minWidth: column.width }}
         >
           {column.key === "region" && !isNewRow ? (
             <div className="px-3 py-2 text-sm text-center w-full">
               <Badge variant="outline">{row[column.key]}</Badge>
+            </div>
+          ) : column.key === "plantCode" ? (
+            <div className="px-3 py-2 text-sm text-center w-full">
+              <Badge variant="outline" className="bg-blue-100 text-blue-800 font-mono text-xs">
+                {row[column.key]}
+              </Badge>
             </div>
           ) : column.key === "status" && !isNewRow ? (
             <div className="px-3 py-2 text-sm text-center w-full">
@@ -144,6 +173,12 @@ const VirtualRow = ({ index, style, data }: any) => {
                   row[column.key] === "Active" ? "default" : row[column.key] === "Pending" ? "secondary" : "outline"
                 }
               >
+                {row[column.key]}
+              </Badge>
+            </div>
+          ) : column.key === "status" && isNewRow ? (
+            <div className="px-3 py-2 text-sm text-center w-full">
+              <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 border-yellow-300">
                 {row[column.key]}
               </Badge>
             </div>
@@ -191,9 +226,9 @@ const ProductTabContent = ({
   handleDeleteNewRow,
   handleAddNewRow,
 }: any) => {
-  // Filter data for specific product and region
+  // Filter data for specific product and region - NEW ROWS FIRST
   const filteredData = useMemo(() => {
-    const allData = [...data, ...newRows]
+    const allData = [...newRows, ...data] // Put new rows first
     return allData.filter((row) => {
       // Product filter
       const matchesProduct = product === "all" || row.product.toLowerCase().replace(/\s+/g, "-") === product
@@ -218,19 +253,23 @@ const ProductTabContent = ({
   const totalWidth = terminalColumns.reduce((sum, col) => sum + col.width, 0) + (newRows.length > 0 ? 40 : 0)
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 w-full overflow-hidden">
       {/* Add New Row for specific product and region */}
-      <div className="flex items-center justify-between">
-        <Button onClick={() => handleAddNewRow(product, activeRegion)} className="bg-green-600 hover:bg-green-700">
+      <div className="flex items-center justify-between flex-wrap gap-4">
+        <Button
+          onClick={() => handleAddNewRow(product, activeRegion)}
+          className="bg-yellow-600 hover:bg-yellow-700 flex-shrink-0"
+        >
           <Plus className="w-4 h-4 mr-2" />
-          Add New {product === "all" ? "Row" : PRODUCTS.find((p) => p.key === product)?.label + " Row"}
+          Add New{" "}
+          {product === "all" ? "Terminal Row" : PRODUCTS.find((p) => p.key === product)?.label + " Terminal Row"}
           {activeRegion !== "all" && (
             <span className="ml-1">- {REGION_MAPPING[activeRegion as keyof typeof REGION_MAPPING]}</span>
           )}
         </Button>
 
-        <div className="text-sm text-gray-600">
-          {filteredData.length.toLocaleString()} records
+        <div className="text-sm text-gray-600 flex-shrink-0">
+          {filteredData.length.toLocaleString()} terminal records
           {product !== "all" && (
             <span className="ml-2 text-blue-600">({PRODUCTS.find((p) => p.key === product)?.label})</span>
           )}
@@ -243,32 +282,32 @@ const ProductTabContent = ({
       </div>
 
       {/* Data Grid */}
-      <Card className="w-full">
+      <Card className="w-full overflow-hidden">
         <CardContent className="p-0">
-          <div className="w-full">
-            {/* Fixed Header */}
-            <div className="bg-slate-700 text-white sticky top-0 z-10 overflow-x-auto">
-              <div className="flex" style={{ minWidth: totalWidth }}>
-                {newRows.length > 0 && (
-                  <div className="w-10 px-2 py-3 text-xs font-medium uppercase tracking-wider bg-slate-700 text-center border-r border-slate-600 flex-shrink-0">
-                    Del
-                  </div>
-                )}
-                {terminalColumns.map((column) => (
-                  <div
-                    key={column.key}
-                    className="px-3 py-3 text-xs font-medium uppercase tracking-wider bg-slate-700 text-center border-r border-slate-600 last:border-r-0 flex-shrink-0"
-                    style={{ width: column.width, minWidth: column.width }}
-                  >
-                    {column.label}
-                  </div>
-                ))}
-              </div>
+          {/* Fixed Header */}
+          <div className="bg-slate-700 text-white sticky top-0 z-10">
+            <div className="flex" style={{ minWidth: totalWidth }}>
+              {newRows.length > 0 && (
+                <div className="w-10 px-2 py-3 text-xs font-medium uppercase tracking-wider bg-slate-700 text-center border-r border-slate-600 flex-shrink-0">
+                  Del
+                </div>
+              )}
+              {terminalColumns.map((column) => (
+                <div
+                  key={column.key}
+                  className="px-3 py-3 text-xs font-medium uppercase tracking-wider bg-slate-700 text-center border-r border-slate-600 last:border-r-0 flex-shrink-0"
+                  style={{ width: column.width, minWidth: column.width }}
+                >
+                  {column.label}
+                </div>
+              ))}
             </div>
+          </div>
 
-            {/* Virtualized Rows */}
+          {/* Scrollable Table Container */}
+          <div className="overflow-x-auto overflow-y-hidden">
             {filteredData.length > 0 ? (
-              <div className="overflow-auto">
+              <div style={{ minWidth: totalWidth }}>
                 <List
                   height={450}
                   itemCount={filteredData.length}
@@ -279,15 +318,15 @@ const ProductTabContent = ({
                     newRows,
                     handleDeleteNewRow,
                   }}
-                  width="100%"
+                  width={totalWidth}
                 >
                   {VirtualRow}
                 </List>
               </div>
             ) : (
               <div className="flex items-center justify-center h-32 text-gray-500">
-                No {product === "all" ? "" : PRODUCTS.find((p) => p.key === product)?.label} data found matching your
-                filters
+                No {product === "all" ? "" : PRODUCTS.find((p) => p.key === product)?.label} terminal data found
+                matching your filters
                 {activeRegion !== "all" && (
                   <span className="ml-1">in {REGION_MAPPING[activeRegion as keyof typeof REGION_MAPPING]}</span>
                 )}
@@ -383,7 +422,7 @@ export function VirtualizedTerminalGrid({ activeRegion }: VirtualizedTerminalGri
     }
 
     const newRow = createEmptyRow(nextId, productName, regionName)
-    setNewRows((prev) => [...prev, newRow])
+    setNewRows((prev) => [newRow, ...prev]) // Add new row at the beginning
     setNextId((prev) => prev + 1)
   }
 
@@ -393,7 +432,7 @@ export function VirtualizedTerminalGrid({ activeRegion }: VirtualizedTerminalGri
 
   const handleSaveNewRows = () => {
     if (newRows.length > 0) {
-      setData((prev) => [...prev, ...newRows])
+      setData((prev) => [...newRows, ...prev]) // Add new rows at the beginning of existing data
       setNewRows([])
       console.log("Saved new rows:", newRows)
     }
@@ -405,7 +444,7 @@ export function VirtualizedTerminalGrid({ activeRegion }: VirtualizedTerminalGri
 
   // Get counts for each product tab (filtered by active region)
   const getProductCount = (productKey: string) => {
-    const allData = [...data, ...newRows]
+    const allData = [...newRows, ...data] // Put new rows first for counting too
     let filtered = allData
 
     // Filter by region first
@@ -419,7 +458,7 @@ export function VirtualizedTerminalGrid({ activeRegion }: VirtualizedTerminalGri
   }
 
   return (
-    <div className="space-y-6 w-full">
+    <div className="space-y-6 w-full overflow-hidden">
       {/* Header with Region Info */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
         <h2 className="text-lg font-semibold text-blue-900">
@@ -427,8 +466,8 @@ export function VirtualizedTerminalGrid({ activeRegion }: VirtualizedTerminalGri
         </h2>
         <p className="text-sm text-blue-700">
           {activeRegion === "all"
-            ? "Viewing data from all regions nationwide"
-            : `Viewing data specifically for ${REGION_MAPPING[activeRegion as keyof typeof REGION_MAPPING]} region`}
+            ? "Viewing terminal data from all regions nationwide"
+            : `Viewing terminal data specifically for ${REGION_MAPPING[activeRegion as keyof typeof REGION_MAPPING]} region`}
         </p>
       </div>
 
@@ -502,10 +541,10 @@ export function VirtualizedTerminalGrid({ activeRegion }: VirtualizedTerminalGri
 
       {/* New Rows Management */}
       {newRows.length > 0 && (
-        <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-lg p-4">
+        <div className="flex items-center justify-between bg-yellow-50 border border-yellow-200 rounded-lg p-4">
           <div className="flex items-center gap-2">
-            <span className="text-sm text-green-800">
-              {newRows.length} new row{newRows.length > 1 ? "s" : ""} added
+            <span className="text-sm text-yellow-800">
+              {newRows.length} new terminal row{newRows.length > 1 ? "s" : ""} added (Pending)
             </span>
           </div>
           <div className="flex items-center gap-2">
