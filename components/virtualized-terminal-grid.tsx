@@ -110,6 +110,11 @@ const generateLargeDataset = (size: number) => {
   })
 }
 
+// Helper function to format numbers consistently
+const formatNumber = (num: number): string => {
+  return new Intl.NumberFormat("en-US").format(num)
+}
+
 const terminalColumns = [
   { key: "date", label: "Date", type: "text" as const, width: 120 },
   { key: "plantName", label: "Terminal Plant Name", type: "text" as const, width: 180 },
@@ -320,7 +325,7 @@ const ProductTabContent = ({
         </Button>
 
         <div className="text-sm text-gray-600 flex-shrink-0">
-          {filteredData.length.toLocaleString()} terminal records
+          {formatNumber(filteredData.length)} terminal records
           {product !== "all" && (
             <span className="ml-2 text-blue-600">({PRODUCTS.find((p) => p.key === product)?.label})</span>
           )}
@@ -622,7 +627,7 @@ export function VirtualizedTerminalGrid({ activeRegion }: VirtualizedTerminalGri
             >
               <span className="truncate mr-2">{product.label}</span>
               <span className="text-[10px] bg-gray-200 text-gray-700 px-1.5 py-0.5 rounded-full flex-shrink-0">
-                {getProductCount(product.key).toLocaleString()}
+                {formatNumber(getProductCount(product.key))}
               </span>
             </TabsTrigger>
           ))}

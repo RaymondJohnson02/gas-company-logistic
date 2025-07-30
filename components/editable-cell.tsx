@@ -72,7 +72,7 @@ export function EditableCell({ value, onSave, type = "text", className }: Editab
       onDoubleClick={handleDoubleClick}
       title="Double-click to edit"
     >
-      {type === "number" && typeof value === "number" ? value.toLocaleString() : value}
+      {type === "number" && typeof value === "number" ? new Intl.NumberFormat("en-US").format(value) : value}
     </div>
   )
 }
